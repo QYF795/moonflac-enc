@@ -75,6 +75,9 @@ pub fn BitWriter::to_bytes(self : BitWriter) -> Bytes {
 /// 写 UTF-8 变长编码数（FLAC 帧号/样本号，字节级写入，调用前必须已
 /// 对齐）。值域 ≤ 0x1FFFFF（四字节 UTF-8）；固定分块下帧号不会超出。
 pub fn BitWriter::write_utf8(self : BitWriter, value : UInt) -> Unit {
+  if self.nbits != 0 {
+    abort("write_utf8 requires byte-aligned writer")
+  }
   if value < 0x80U {
     self.buf.write_byte(value.to_byte())
   } else if value < 0x800U {

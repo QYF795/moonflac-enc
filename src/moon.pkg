@@ -1,0 +1,9 @@
+import {
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/math",
+  "moonbitlang/x/crypto",
+}
+
+import {
+  "Xcsa-ee/moonflac",
+} for "test"

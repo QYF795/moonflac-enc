@@ -1,0 +1,8 @@
+_build/
+.mooncakes/
+*.tmp
+demo.flac
+demo.pcm
+ffmpeg_out.pcm
+__pycache__/
+*.pyc

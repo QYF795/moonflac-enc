@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [js, wasm-gc, native]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install moon
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: moon version
+        run: moon version --all
+
+      # The registry is a git index: sync it before resolving dependencies,
+      # otherwise dependency resolution reports "module was not found".
+      - name: moon update
+        run: moon update
+
+      # Same pattern as moonbitlang/x: the native backend is occasionally
+      # flaky in CI, so retry it a few times before failing the job.
+      - name: moon test (native)
+        if: matrix.target == 'native'
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 30
+          max_attempts: 5
+          command: moon test --target native
+
+      - name: moon test
+        if: matrix.target != 'native'
+        run: moon test --target ${{ matrix.target }}
+
+      - name: moon check
+        if: matrix.target == 'js'
+        run: moon check --deny-warn
+
+  # 编码产物交叉验证：demo 生成的 .flac 必须能被参考解码器逐字节还原。
+  # flac -t 走完整解码 + CRC/MD5 校验，ffmpeg 交叉解码后与原始 PCM 比对。
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install moon
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: moon update
+        run: moon update
+
+      - name: Build demo (js)
+        run: moon run src/demo --target js
+
+      - name: Install reference decoders
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flac ffmpeg
+
+      - name: flac -t integrity check
+        run: flac -t demo.flac
+
+      - name: ffmpeg cross-decode
+        run: |
+          ffmpeg -v error -i demo.flac -f s16le -acodec pcm_s16le ffmpeg_out.pcm
+          cmp demo.pcm ffmpeg_out.pcm

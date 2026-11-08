@@ -20,17 +20,20 @@ moon add QYF795/moonflac-enc
 
 ```moonbit
 import {
-  "QYF795/moonflac-enc",
+  "QYF795/moonflac-enc" @enc,
   "moonbitlang/x/fs",
 }
 
-fn main raise {
+fn main {
   // 44.1 kHz / 16 位 / 单声道交织小端 PCM（FLAC 惯例）
   let pcm : Bytes = @fs.read_file_to_bytes("input.pcm")
-  let flac : Bytes = @moonflacenc.encode_pcm(pcm, channels=1, bps=16, sample_rate=44100)
+  let flac : Bytes = @enc.encode_pcm(pcm, 1, 16, 44100, @enc.Options::new(5, 0))
   @fs.write_bytes_to_file("output.flac", flac)
 }
 ```
+
+`Options::new(level, block_size)`：`block_size=0` 时按 `level` 查表
+（0-2→1152，3-6→4096，7-8→4608）；`Options::no_md5` 关闭 MD5 校验和。
 
 编码产物可用 moonflac 解码回 PCM，或由 `flac` / `ffmpeg` 等参考解码器
 直接验证。
@@ -51,10 +54,11 @@ fn main raise {
 
 ## 验证
 
-- 单元测试：`moon test --target js`（wasm-gc 同）
-- 往返验证：编码产物由 moonflac 解码，逐样本比对
+- 单元测试：`moon test --target js`（wasm-gc/native 同，CI 全覆盖）
+- 往返验证：编码产物由 moonflac 解码，逐样本比对（含 MD5 校验）
 - 参考解码器交叉验证（CI）：`flac -t` + `ffmpeg` 交叉解码逐字节比对
-- 详见 [docs/acceptance.md](docs/acceptance.md)
+- 演示：`moon run src/demo --target js` 生成 demo.flac/demo.dec.wav
+- 详见 [docs/acceptance.md](docs/acceptance.md) 验收清单
 
 ## 贡献
 

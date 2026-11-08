@@ -48,33 +48,39 @@ jobs:
 
   # 编码产物交叉验证：demo 生成的 .flac 必须能被参考解码器逐字节还原。
   # flac -t 走完整解码 + CRC/MD5 校验，ffmpeg 交叉解码后与原始 PCM 比对。
-  # src/demo 随 m0/encoder 引入，此前的分支跳过该 job。
+  # src/demo 随 m0/encoder 引入，此前的分支跳过全部步骤（job 仍 success）。
+  # 注意：hashFiles 只能用于步骤级 if（job 级 if 会让整个 workflow 被拒）。
   conformance:
     runs-on: ubuntu-latest
-    if: hashFiles('src/demo/main.mbt') != ''
     steps:
       - uses: actions/checkout@v6
 
       - name: Install moon
+        if: hashFiles('src/demo/main.mbt') != ''
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
       - name: moon update
+        if: hashFiles('src/demo/main.mbt') != ''
         run: moon update
 
       - name: Build demo (js)
+        if: hashFiles('src/demo/main.mbt') != ''
         run: moon run src/demo --target js
 
       - name: Install reference decoders
+        if: hashFiles('src/demo/main.mbt') != ''
         run: |
           sudo apt-get update
           sudo apt-get install -y flac ffmpeg
 
       - name: flac -t integrity check
+        if: hashFiles('src/demo/main.mbt') != ''
         run: flac -t demo.flac
 
       - name: ffmpeg cross-decode
+        if: hashFiles('src/demo/main.mbt') != ''
         run: |
           ffmpeg -v error -i demo.flac -f s16le -acodec pcm_s16le ffmpeg_out.pcm
           cmp demo.pcm ffmpeg_out.pcm

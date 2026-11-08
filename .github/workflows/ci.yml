@@ -48,8 +48,10 @@ jobs:
 
   # 编码产物交叉验证：demo 生成的 .flac 必须能被参考解码器逐字节还原。
   # flac -t 走完整解码 + CRC/MD5 校验，ffmpeg 交叉解码后与原始 PCM 比对。
+  # src/demo 随 m0/encoder 引入，此前的分支跳过该 job。
   conformance:
     runs-on: ubuntu-latest
+    if: hashFiles('src/demo/main.mbt') != ''
     steps:
       - uses: actions/checkout@v6
 

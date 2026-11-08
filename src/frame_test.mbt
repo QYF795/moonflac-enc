@@ -31,10 +31,10 @@ test "frame header uses 16-bit block size extension for non-table size" {
   // 块码 0111 + 采样率 0000 + 声道 0000 + 位深 000 + 保留 0 = 0x7000
   assert_eq(frame.unsafe_get(2).to_int(), 0x70)
   assert_eq(frame.unsafe_get(3).to_int(), 0x00)
-  // UTF-8 帧号 0 之后是 16 位块大小扩展：1000 = 0x03E8
+  // UTF-8 帧号 0 之后是 16 位块大小扩展：999 = 0x03E7（存块大小 − 1）
   assert_eq(frame.unsafe_get(4).to_int(), 0x00)
   assert_eq(frame.unsafe_get(5).to_int(), 0x03)
-  assert_eq(frame.unsafe_get(6).to_int(), 0xE8)
+  assert_eq(frame.unsafe_get(6).to_int(), 0xE7)
   // CRC-8 覆盖前 7 字节帧头
   assert_eq(frame.unsafe_get(7).to_int(), crc8(frame[0:7].to_owned()))
   // 帧体 = 7 头 + 1 crc8 + 子帧(8 位头 + 2×16 位样本) + 2 crc16

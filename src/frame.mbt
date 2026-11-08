@@ -67,7 +67,8 @@ pub fn build_frame(
   h.write_bits(0U, 1) // 保留位
   h.write_utf8(frame_number)
   if needs_ext {
-    h.write_bits(block_size.reinterpret_as_uint(), 16)
+    // 块大小码 0111 的 16 位扩展存「块大小 − 1」（RFC 9639 §9.2.2）
+    h.write_bits((block_size - 1).reinterpret_as_uint(), 16)
   }
   h.align()
   let header = h.to_bytes()

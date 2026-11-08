@@ -3,6 +3,7 @@ _build/
 *.tmp
 demo.flac
 demo.pcm
+demo.dec.wav
 ffmpeg_out.pcm
 __pycache__/
 *.pyc
